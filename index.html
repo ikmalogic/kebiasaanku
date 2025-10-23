@@ -195,10 +195,18 @@
 
         <!-- Konten Utama (Akan di-blur saat sidebar terbuka) -->
         <main id="main-content" class="w-full">
-            <div class="w-full max-w-lg p-4 mx-auto">
+            <!-- MOD: 
+                - 'h-screen' & 'flex flex-col': Membuat kontainer ini setinggi layar dan menjadi kontainer flex vertikal.
+                - 'p-4' dihapus: Padding akan diterapkan ke anak-anaknya secara individual.
+            -->
+            <div class="w-full max-w-lg mx-auto h-screen flex flex-col">
 
                 <!-- Header Utama -->
-                <header class="flex justify-between items-center pt-2 pb-4">
+                <!-- MOD: 
+                    - 'flex-shrink-0': Mencegah header ini menyusut.
+                    - 'px-4': Menambahkan padding horizontal yang sebelumnya ada di 'div' induk.
+                -->
+                <header class="flex-shrink-0 flex justify-between items-center pt-2 pb-4 px-4">
                     <!-- Header Mode Normal -->
                     <div id="header-normal" class="flex justify-between items-center w-full">
                         <button id="sidebar-open-btn" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-full transition duration-150" title="Buka Menu">
@@ -239,7 +247,13 @@
                 </header>
 
                 <!-- Area Konten (Loading atau Tabel) -->
-                <div id="content-area">
+                <!-- MOD: 
+                    - 'flex-grow': Membuat area ini mengisi sisa ruang.
+                    - 'overflow-y-auto': Membuat HANYA area ini yang bisa di-scroll secara vertikal.
+                    - 'px-4': Menambahkan padding horizontal yang sebelumnya ada di 'div' induk.
+                -->
+                <!-- REVISI: Menambahkan 'overflow-x-auto' di sini -->
+                <div id="content-area" class="flex-grow overflow-y-auto overflow-x-auto px-4">
                     
                     <!-- FITUR 14: Pesan Loading Kustom -->
                     <div id="loading-spinner" class="flex flex-col items-center justify-center min-h-[50vh] text-gray-900 dark:text-white">
@@ -255,9 +269,11 @@
                     </div>
                     
                     <!-- Tabel Kebiasaan (hidden by default) -->
-                    <div id="table-container" class="overflow-x-auto hidden">
+                    <!-- REVISI: Menghapus 'overflow-x-auto' dari sini. Ini adalah penyebab error. -->
+                    <div id="table-container" class="hidden">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-                            <thead id="habit-table-head">
+                            <!-- MOD: 'sticky top-0 z-10': Membuat header tabel menempel di bagian atas 'content-area' saat di-scroll -->
+                            <thead id="habit-table-head" class="sticky top-0 z-10">
                                 <!-- Header hari akan diisi oleh JS -->
                             </thead>
                             <tbody id="habit-table-body" class="divide-y divide-gray-200 dark:divide-gray-800">
@@ -278,7 +294,11 @@
                 </div>
 
                 <!-- FITUR 2: Footer dengan Lencana Profesional -->
-                <footer class="mt-8 text-xs text-gray-500 dark:text-gray-600 p-4 border-t border-gray-200 dark:border-gray-800 text-center">
+                <!-- MOD: 
+                    - 'flex-shrink-0': Mencegah footer ini menyusut.
+                    - 'mt-8' dihapus: Spasi sekarang diatur oleh 'flex-grow' pada 'content-area'.
+                -->
+                <footer class="flex-shrink-0 text-xs text-gray-500 dark:text-gray-600 p-4 border-t border-gray-200 dark:border-gray-800 text-center">
                     <p>Data Anda disimpan secara lokal di peramban ini.</p>
                     <a 
                         href="https://www.threads.net/@ikmalogic" 
@@ -454,7 +474,7 @@
     <!-- === JAVASCRIPT APLIKASI === -->
     <script type="module">
         // --- KONSTANTA & STATE ---
-        const LONG_PRESS_DURATION = 500;
+        const LONG_PRESS_DURATION = 3000;
         const PAST_DAYS = getPastDays(4);
         const COLOR_MAP = {
             red: 'bg-red-500',
@@ -651,7 +671,9 @@
         
         /** Merender 4 kolom header hari */
         function renderTableHeaders() {
-            let headerHTML = `<tr class="text-gray-500 dark:text-gray-400 uppercase text-xs font-semibold tracking-wider">
+            /* MOD: Menambahkan 'bg-gray-100 dark:bg-black' ke 'tr' 
+                    agar konten yang di-scroll tidak terlihat tembus di belakang header tabel. */
+            let headerHTML = `<tr class="bg-gray-100 dark:bg-black text-gray-500 dark:text-gray-400 uppercase text-xs font-semibold tracking-wider">
                 <th class="w-2/5 px-2 py-4 text-left"></th>`; // Kolom Nama Kebiasaan
             
             PAST_DAYS.forEach(day => {
@@ -1238,6 +1260,9 @@
 
 </body>
 </html>
+
+
+
 
 
 
