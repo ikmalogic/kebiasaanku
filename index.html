@@ -475,7 +475,7 @@
     <!-- === JAVASCRIPT APLIKASI === -->
     <script type="module">
         // --- KONSTANTA & STATE ---
-        const LONG_PRESS_DURATION = 1000; // REVISI: Durasi 3 detik terlalu lama & sensitif. Diubah ke 1 detik.
+        const LONG_PRESS_DURATION = 3000;
         const PAST_DAYS = getPastDays(4);
         const COLOR_MAP = {
             red: 'bg-red-500',
@@ -720,7 +720,7 @@
                 
                 if (!isSelectionMode) {
                     nameCellHTML += `
-                        <button class="delete-habit-btn text-gray-400 dark:text-gray-700 hover:text-red-500 transition-colors p-1 rounded-full opacity-0" data-habit-id="${habit.id}" title="Hapus ${habit.name}">
+                        <button class="delete-habit-btn text-gray-400 dark:text-gray-700 hover:text-red-500 transition-colors p-1 rounded-full opacity-0 group-hover:opacity-100" data-habit-id="${habit.id}" title="Hapus ${habit.name}">
                             ${SVG_ICON.trash}
                         </button>`;
                 }
@@ -734,8 +734,7 @@
                 });
                 
                 // --- Tambahkan Event Listeners ke Baris ---
-                const trashBtn = tr.querySelector('.delete-habit-btn');
-
+                
                 // 1. Klik (Mode Seleksi)
                 tr.addEventListener('click', () => {
                     clearTimeout(pressTimer); // Batalkan long-press jika ini klik biasa
@@ -748,61 +747,19 @@
                 tr.addEventListener('mousedown', (e) => {
                     // Hanya trigger long-press dengan klik kiri
                     if (e.button !== 0) return;
-                    
-                    // --- PERBAIKAN ---
                     clearTimeout(pressTimer); // Hapus timer sebelumnya
-                    tr.dataset.isPressing = 'true'; // Tandai bahwa kita sedang menekan
-                    if (trashBtn) trashBtn.classList.remove('opacity-100'); // Paksa sembunyi
-                    // --- AKHIR PERBAIKAN ---
-
-                    pressTimer = setTimeout(() => {
-                        handleEnterSelectionMode(habit.id);
-                        document.removeEventListener('mouseup', clearPressTimerOnMouseUp);
-                        tr.dataset.isPressing = 'false'; // Hapus tanda
-                    }, LONG_PRESS_DURATION);
-
-                    document.addEventListener('mouseup', clearPressTimerOnMouseUp, { once: true });
+                    pressTimer = setTimeout(() => handleEnterSelectionMode(habit.id), LONG_PRESS_DURATION);
                 });
+                tr.addEventListener('mouseup', () => clearTimeout(pressTimer));
+                tr.addEventListener('mouseleave', () => clearTimeout(pressTimer));
                 
                 // 3. Long Press (Touch)
                 tr.addEventListener('touchstart', () => {
-                    // --- PERBAIKAN ---
                     clearTimeout(pressTimer); // Hapus timer sebelumnya
-                    tr.dataset.isPressing = 'true'; // Tandai bahwa kita sedang menekan
-                    if (trashBtn) trashBtn.classList.remove('opacity-100'); // Paksa sembunyi
-                    // --- AKHIR PERBAIKAN ---
-
-                    pressTimer = setTimeout(() => {
-                        handleEnterSelectionMode(habit.id);
-                        tr.dataset.isPressing = 'false'; // Hapus tanda
-                    }, LONG_PRESS_DURATION);
+                    pressTimer = setTimeout(() => handleEnterSelectionMode(habit.id), LONG_PRESS_DURATION);
                 });
-
-                // Helper untuk membersihkan timer + status
-                const clearLongPress = () => {
-                    clearTimeout(pressTimer);
-                    tr.dataset.isPressing = 'false';
-                };
-                
-                tr.addEventListener('touchend', clearLongPress);
-                tr.addEventListener('touchcancel', clearLongPress);
-                tr.addEventListener('touchmove', clearLongPress);
-
-                // 4. Hover (Mouse Enter/Leave) - Pengganti CSS group-hover
-                tr.addEventListener('mouseenter', () => {
-                    // JANGAN tampilkan tong sampah jika:
-                    // 1. Sedang dalam mode seleksi
-                    // 2. Sedang dalam proses "tekan lama" (isPressing)
-                    if (isSelectionMode || tr.dataset.isPressing === 'true') return;
-                    
-                    if (trashBtn) trashBtn.classList.add('opacity-100');
-                });
-                
-                tr.addEventListener('mouseleave', () => {
-                    // Selalu sembunyikan saat mouse keluar
-                    if (trashBtn) trashBtn.classList.remove('opacity-100');
-                });
-
+                tr.addEventListener('touchend', () => clearTimeout(pressTimer));
+                tr.addEventListener('touchcancel', () => clearTimeout(pressTimer));
 
                 tableBody.appendChild(tr);
             });
@@ -823,14 +780,6 @@
                     handleToggleSelection(e.currentTarget.dataset.habitId);
                 });
             });
-        }
-        
-        /** Fungsi helper untuk membersihkan timer on mouseup global */
-        function clearPressTimerOnMouseUp() {
-            clearTimeout(pressTimer);
-            // Kita juga harus membersihkan status 'isPressing' di semua baris
-            // (karena mouseup-nya global, kita tidak tahu baris mana yg ditekan)
-            $$('#habit-table-body tr').forEach(row => row.dataset.isPressing = 'false');
         }
         
         /** Merender satu sel progres */
@@ -1180,10 +1129,7 @@
             if (isSelectionMode) return; // Sudah dalam mode seleksi
             isSelectionMode = true;
             selectedHabitIds.clear();
-            // Garis di bawah ini dihapus/dikomentari sesuai permintaan:
-            // Menekan lama sekarang hanya akan memunculkan kotak centang,
-            // tanpa langsung memilih item yang ditekan.
-            // selectedHabitIds.add(habitId);
+            selectedHabitIds.add(habitId);
             renderUI(); // Render ulang untuk menampilkan checkbox
         }
         
@@ -1315,19 +1261,3 @@
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
