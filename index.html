@@ -122,7 +122,8 @@
     </style>
 </head>
 
-<body class="font-space-grotesk bg-gray-100 dark:bg-black text-gray-900 dark:text-white overflow-hidden">
+<!-- MOD: Menambahkan 'fixed inset-0' untuk mengunci body ke viewport dan mencegah 'overscroll bounce' di HP -->
+<body class="font-space-grotesk bg-gray-100 dark:bg-black text-gray-900 dark:text-white overflow-hidden fixed inset-0">
 
     <!-- Kontainer Aplikasi -->
     <div id="app-container">
@@ -197,10 +198,10 @@
         <!-- Konten Utama (Akan di-blur saat sidebar terbuka) -->
         <main id="main-content" class="w-full">
             <!-- MOD: 
-                - 'h-screen' & 'flex flex-col': Membuat kontainer ini setinggi layar dan menjadi kontainer flex vertikal.
+                - 'h-dvh' (sebelumnya 'h-screen') & 'flex flex-col': Membuat kontainer ini setinggi layar (dinamis) dan menjadi kontainer flex vertikal.
                 - 'p-4' dihapus: Padding akan diterapkan ke anak-anaknya secara individual.
             -->
-            <div class="w-full max-w-lg mx-auto h-screen flex flex-col">
+            <div class="w-full max-w-lg mx-auto h-dvh flex flex-col">
 
                 <!-- Header Utama -->
                 <!-- MOD: 
@@ -253,8 +254,8 @@
                     - 'overflow-y-auto': Membuat HANYA area ini yang bisa di-scroll secara vertikal.
                     - 'px-4': Menambahkan padding horizontal yang sebelumnya ada di 'div' induk.
                 -->
-                <!-- REVISI: Menambahkan 'overflow-x-auto' di sini -->
-                <div id="content-area" class="flex-grow overflow-y-auto overflow-x-auto px-4">
+                <!-- REVISI: Menghapus 'overflow-x-auto' untuk MENCEGAH geser kiri-kanan -->
+                <div id="content-area" class="flex-grow overflow-y-auto px-4">
                     
                     <!-- FITUR 14: Pesan Loading Kustom -->
                     <div id="loading-spinner" class="flex flex-col items-center justify-center min-h-[50vh] text-gray-900 dark:text-white">
@@ -272,7 +273,10 @@
                     <!-- Tabel Kebiasaan (hidden by default) -->
                     <!-- REVISI: Menghapus 'overflow-x-auto' dari sini. Ini adalah penyebab error. -->
                     <div id="table-container" class="hidden">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                        <!-- REVISI: Mengganti 'min-w-full' dengan 'w-full table-fixed' 
+                                     'w-full' membuatnya pas 100%
+                                     'table-fixed' memaksa kolom untuk mematuhi lebar yang ditentukan -->
+                        <table class="w-full table-fixed divide-y divide-gray-200 dark:divide-gray-800">
                             <!-- MOD: 'sticky top-0 z-10': Membuat header tabel menempel di bagian atas 'content-area' saat di-scroll -->
                             <thead id="habit-table-head" class="sticky top-0 z-10">
                                 <!-- Header hari akan diisi oleh JS -->
@@ -675,11 +679,13 @@
             /* MOD: Menambahkan 'bg-gray-100 dark:bg-black' ke 'tr' 
                     agar konten yang di-scroll tidak terlihat tembus di belakang header tabel. */
             let headerHTML = `<tr class="bg-gray-100 dark:bg-black text-gray-500 dark:text-gray-400 uppercase text-xs font-semibold tracking-wider">
-                <th class="w-2/5 px-2 py-4 text-left"></th>`; // Kolom Nama Kebiasaan
+                <th class="w-2/5 px-2 py-4 text-left"></th>`; // Kolom Nama Kebiasaan (40%)
             
             PAST_DAYS.forEach(day => {
                 headerHTML += `
-                    <th class="w-1/12 px-2 py-4 text-center relative">
+                    <!-- REVISI: Mengganti 'w-1/12' (8.3%) dengan 'w-3/20' (15%)
+                                 Total: 40% (Nama) + 4 * 15% (Hari) = 100% -->
+                    <th class="w-3/20 px-2 py-4 text-center relative">
                         ${day.display.split(' ')[0]}
                         <br />
                         <span class="text-lg ${day.isToday ? 'text-gray-800 dark:text-white' : ''}">${day.display.split(' ')[1]}</span>
@@ -1261,6 +1267,9 @@
 
 </body>
 </html>
+
+
+
 
 
 
