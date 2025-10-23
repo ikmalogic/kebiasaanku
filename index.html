@@ -167,6 +167,22 @@
             
             <!-- Bagian Bawah Sidebar (Pengaturan Data) -->
             <div class="p-6 border-t border-gray-200 dark:border-gray-700">
+
+                <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Unduh Riwayat</h4>
+                <div class="space-y-3 mb-4">
+                    <div>
+                        <label for="download-start-date" class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Tanggal Mulai</label>
+                        <input type="date" id="download-start-date" class="w-full p-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600">
+                    </div>
+                    <div>
+                        <label for="download-end-date" class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Tanggal Akhir</label>
+                        <input type="date" id="download-end-date" class="w-full p-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600">
+                    </div>
+                    <button id="download-csv-btn" class="w-full px-3 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 transition duration-150">
+                        Unduh (CSV)
+                    </button>
+                </div>
+
                 <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Panduan</h4>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                     Tekan lama pada baris kebiasaan untuk masuk ke mode hapus massal.
@@ -349,7 +365,7 @@
                     <div id="color-palette" class="flex space-x-3">
                         <!-- Warna akan diisi oleh JS -->
                     </div>
-                    <input type="hidden" id="habit-color" value="blue">
+                    <input type="hidden" id="habit-color" value="red">
                 </div>
 
                 <div class="flex justify-end space-x-3">
@@ -441,11 +457,14 @@
         const LONG_PRESS_DURATION = 500;
         const PAST_DAYS = getPastDays(4);
         const COLOR_MAP = {
-            blue: 'bg-blue-500',
+            red: 'bg-red-500',
             orange: 'bg-orange-500',
             yellow: 'bg-yellow-500',
             green: 'bg-green-500',
-            purple: 'bg-purple-500',
+            blue: 'bg-blue-500',
+            indigo: 'bg-indigo-500',
+            violet: 'bg-violet-500',
+            pink: 'bg-pink-500',
         };
         const SVG_ICON = {
             sun: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`,
@@ -494,6 +513,11 @@
         const sidebarThemeIcon = $('#sidebar-theme-icon');
         const sidebarNavManage = $('#sidebar-nav-manage');
         const clearAllDataBtn = $('#clear-all-data-btn');
+
+        // Sidebar Download
+        const downloadStartDateInput = $('#download-start-date');
+        const downloadEndDateInput = $('#download-end-date');
+        const downloadCsvBtn = $('#download-csv-btn');
 
         // Tombol Tema
         const themeToggleBtn = $('#theme-toggle-btn');
@@ -934,7 +958,7 @@
             habitNameInput.value = ''; // Pastikan input 'X'
             clearHabitNameBtn.classList.add('hidden');
             metricUnitContainer.classList.add('hidden');
-            habitColorInput.value = 'blue';
+            habitColorInput.value = 'red';
             renderColorPalette();
             toggleModal(addHabitModal, true);
         }
@@ -980,6 +1004,99 @@
             deleteModalText.innerHTML = `Anda yakin ingin menghapus <strong>SEMUA</strong> data kebiasaan? Tindakan ini tidak dapat dibatalkan.`;
             deleteCallback = handleClearAllData;
             toggleModal(deleteConfirmModal, true);
+        }
+
+        /** Meng-quote string untuk CSV (Penting agar koma tidak merusak tabel) */
+        function quoteCSV(str) {
+            const string = String(str);
+            // Jika string mengandung koma, petik ganda, atau baris baru, bungkus dengan petik ganda
+            // dan escape petik ganda di dalamnya dengan petik ganda tambahan
+            if (string.includes(',') || string.includes('"') || string.includes('\n')) {
+                return `"${string.replace(/"/g, '""')}"`;
+            }
+            return string;
+        }
+
+        /** Mengunduh data sebagai CSV */
+        function handleDownloadCSV() {
+            const startDate = new Date(downloadStartDateInput.value);
+            const endDate = new Date(downloadEndDateInput.value);
+
+            if (!downloadStartDateInput.value || !downloadEndDateInput.value) {
+                alert("Silakan pilih tanggal mulai dan tanggal akhir."); // Menggunakan alert untuk kesederhanaan
+                return;
+            }
+
+            // Validasi sederhana
+            if (endDate < startDate) {
+                alert("Tanggal akhir tidak boleh sebelum tanggal mulai.");
+                return;
+            }
+
+            // 1. Buat daftar rentang tanggal
+            const dates = [];
+            let currentDate = new Date(startDate);
+            // Set ke awal hari untuk menghindari masalah zona waktu
+            currentDate.setHours(0, 0, 0, 0); 
+            endDate.setHours(23, 59, 59, 999); // Set ke akhir hari
+
+            while (currentDate <= endDate) {
+                dates.push(formatDate(currentDate, 'key')); // YYYY-MM-DD
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            if (dates.length === 0) {
+                alert("Rentang tanggal tidak valid.");
+                return;
+            }
+
+            // 2. Buat Konten CSV
+            const csvRows = [];
+            
+            // Header
+            const header = ["Kebiasaan", "Tipe", "Unit", ...dates];
+            csvRows.push(header.join(','));
+
+            // Rows (Data)
+            habits.forEach(habit => {
+                const row = [
+                    quoteCSV(habit.name),
+                    quoteCSV(habit.type),
+                    quoteCSV(habit.unit || '')
+                ];
+                
+                dates.forEach(dateKey => {
+                    const progress = habit.progress[dateKey];
+                    let value = ''; // Default (kosong)
+                    if (progress === true) {
+                        value = 'Selesai';
+                    } else if (progress === false) {
+                        value = 'Tidak';
+                    } else if (progress !== undefined) {
+                        value = progress; // Nilai metrik (angka)
+                    }
+                    row.push(quoteCSV(value));
+                });
+                
+                csvRows.push(row.join(','));
+            });
+
+            const csvContent = csvRows.join('\n');
+            
+            // 3. Buat Blob dan Trigger Download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            // Buat nama file yang dinamis
+            const fileName = `habit_export_${formatDate(startDate, 'key')}_sd_${formatDate(endDate, 'key')}.csv`;
+            link.setAttribute('download', fileName);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // --- Fungsi Mode Seleksi ---
@@ -1034,6 +1151,16 @@
                 document.body.classList.remove('sidebar-open');
             });
             clearAllDataBtn.addEventListener('click', openClearAllDataModal);
+
+            // Setup Download
+            const today = new Date();
+            const lastWeek = new Date();
+            lastWeek.setDate(today.getDate() - 6);
+            
+            // Set default date range (7 hari terakhir)
+            downloadStartDateInput.valueAsDate = lastWeek;
+            downloadEndDateInput.valueAsDate = today;
+            downloadCsvBtn.addEventListener('click', handleDownloadCSV);
 
             // 3. Setup Modal
             addHabitBtn.addEventListener('click', openAddHabitModal);
@@ -1111,3 +1238,5 @@
 
 </body>
 </html>
+
+
