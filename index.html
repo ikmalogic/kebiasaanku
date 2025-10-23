@@ -11,7 +11,7 @@
     <!-- 2. Konfigurasi Font & Dark Mode -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;700&display=swap" rel="stylesheet">
     
     <script>
         // Terapkan dark mode dari localStorage sebelum halaman dimuat
@@ -26,6 +26,7 @@
             theme: {
                 extend: {
                     fontFamily: {
+                        'cinzel': ['Cinzel', 'serif'],
                         'inter': ['Inter', 'sans-serif'],
                         'space-grotesk': ['Space Grotesk', 'sans-serif'],
                     },
@@ -213,8 +214,8 @@
                             <!-- SVG Ikon Menu -->
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                         </button>
-                        <div class="text-2xl font-bold hidden sm:block">
-                            Kebiasaan
+                        <div class="text-2xl font-bold">
+                            Kebiasaanku
                         </div>
                         <div class="flex space-x-2">
                             <button id="theme-toggle-btn" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-full transition duration-150" title="Ganti Tema">
@@ -1260,6 +1261,9 @@
 
 </body>
 </html>
+
+
+
 
 
 
