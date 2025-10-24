@@ -1,1274 +1,272 @@
 <!DOCTYPE html>
-<html lang="id" class="dark">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Habit Tracker (Lokal)</title>
-    
-    <!-- 1. Tailwind CSS -->
+    <title>Fasttrack Learning Class - BCB Academy</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 2. Konfigurasi Font & Dark Mode -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;700&display=swap" rel="stylesheet">
-    
-    <script>
-        // Terapkan dark mode dari localStorage sebelum halaman dimuat
-        if (localStorage.getItem('theme') === 'light' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: light)').matches)) {
-            document.documentElement.classList.remove('dark');
-        } else {
-            document.documentElement.classList.add('dark');
-        }
-        // Konfigurasi Tailwind untuk font
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        'cinzel': ['Cinzel', 'serif'],
-                        'inter': ['Inter', 'sans-serif'],
-                        'space-grotesk': ['Space Grotesk', 'sans-serif'],
-                    },
-                },
-            },
-        }
-    </script>
-    
-    <!-- 3. Custom CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            /* Transisi untuk warna latar belakang saat ganti tema */
-            transition: background-color 0.3s ease, color 0.3s ease;
+            font-family: 'Inter', sans-serif;
         }
-        
-        /* --- Sidebar & Blur --- */
-        #sidebar-menu {
-            transition: transform 0.3s ease-in-out;
-            transform: translateX(-100%);
+        /* Custom styles for better iframe responsiveness */
+        .video-container, .doc-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            max-width: 100%;
+            background: #f0f0f0;
+            border-radius: 0.5rem;
         }
-        #sidebar-overlay {
-            transition: opacity 0.3s ease-in-out;
-            opacity: 0;
-            pointer-events: none;
+        .doc-container {
+             padding-bottom: 129.4%; /* Aspect ratio for A4 paper */
         }
-        body.sidebar-open #sidebar-menu {
-            transform: translateX(0);
+        .video-container iframe, .doc-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
         }
-        body.sidebar-open #sidebar-overlay {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        body.sidebar-open #main-content {
-            /* Efek blur (Fitur 5) */
-            filter: blur(4px) brightness(0.7);
-            transform: scale(0.98);
-            pointer-events: none;
-            user-select: none;
-        }
-        #main-content {
-            transition: filter 0.3s ease-in-out, transform 0.3s ease-in-out;
-        }
-
-        /* --- Modal --- */
-        .modal {
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease-in-out;
-        }
-        .modal.open {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .modal-content {
-            transform: scale(0.95);
-            transition: transform 0.2s ease-in-out;
-        }
-        .modal.open .modal-content {
-            transform: scale(1);
-        }
-
-        /* --- Scrollbar (Opsional, tapi bagus) --- */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
-        .dark ::-webkit-scrollbar-thumb { background: #374151; }
-        
-        /* --- Tombol Shading (Fitur 19) --- */
-        .btn-primary {
-            @apply bg-blue-600 text-white shadow-md transition-all duration-150 transform;
-        }
-        .btn-primary:hover {
-            @apply bg-blue-700 shadow-lg -translate-y-px;
-        }
-        .btn-secondary {
-            @apply bg-gray-200 text-gray-800 transition-all duration-150;
-        }
-        .btn-secondary:hover {
-            @apply bg-gray-300;
-        }
-        .dark .btn-secondary {
-            @apply bg-gray-600 text-gray-200;
-        }
-        .dark .btn-secondary:hover {
-            @apply bg-gray-700;
-        }
-        .btn-danger {
-            @apply bg-red-600 text-white shadow-md transition-all duration-150 transform;
-        }
-        .btn-danger:hover {
-            @apply bg-red-700 shadow-lg -translate-y-px;
+        /* Custom checkbox style */
+        .custom-checkbox:checked {
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+            background-color: #4f46e5;
+            border-color: #4f46e5;
         }
     </style>
 </head>
+<body class="bg-gray-50 text-gray-800">
 
-<body class="font-space-grotesk bg-gray-100 dark:bg-black text-gray-900 dark:text-white overflow-hidden">
-
-    <!-- Kontainer Aplikasi -->
-    <div id="app-container">
-
-        <!-- Sidebar Overlay -->
-        <div id="sidebar-overlay" class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"></div>
-
-        <!-- Sidebar Menu -->
-        <div id="sidebar-menu" class="fixed top-0 left-0 h-full w-72 bg-white dark:bg-gray-800 z-50 shadow-2xl flex flex-col overflow-y-auto"> <!-- MOD: Tambahkan overflow-y-auto di sini -->
-            <!-- Bagian Atas Sidebar -->
-            <div class="p-6 flex-grow"> <!-- MOD: Hapus overflow-y-auto dari sini -->
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-bold">Menu Aplikasi</h3>
-                    <button id="sidebar-close-btn" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-full transition duration-150" title="Tutup Menu">
-                        <!-- SVG Ikon X -->
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
+    <!-- Progress Bar (Floating) -->
+    <div id="progress-container" class="sticky top-0 z-50 bg-white/80 backdrop-blur-sm shadow-sm p-4">
+        <div class="max-w-4xl mx-auto">
+            <h3 class="text-sm font-medium text-gray-600 mb-2">Progress Belajar Anda</h3>
+            <div class="flex items-center gap-4">
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div id="progress-bar" class="bg-indigo-600 h-4 rounded-full transition-all duration-500 ease-in-out" style="width: 0%;"></div>
                 </div>
-                
-                <nav class="space-y-3">
-                    <div id="sidebar-nav-track" class="flex items-center p-3 text-lg font-medium text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-150 cursor-pointer">
-                        <!-- SVG Ikon Check -->
-                        <svg class="w-5 h-5 mr-3 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        <span class="truncate">Lacak Kebiasaan</span>
-                    </div>
-                    <div id="sidebar-nav-add" class="flex items-center p-3 text-lg font-medium text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-150 cursor-pointer">
-                        <!-- SVG Ikon Plus -->
-                        <svg class="w-5 h-5 mr-3 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                        <span class="truncate">Tambah Kebiasaan</span>
-                    </div>
-                    <div id="sidebar-nav-theme" class="flex items-center p-3 text-lg font-medium text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-150 cursor-pointer">
-                        <!-- Ikon Tema akan diisi oleh JS -->
-                        <span id="sidebar-theme-icon" class="w-5 h-5 mr-3"></span>
-                        <span class="truncate">Ganti Tema</span>
-                    </div>
-                    <div id="sidebar-nav-manage" class="flex items-center p-3 text-lg font-medium text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-150 cursor-pointer">
-                        <!-- SVG Ikon Trash -->
-                        <svg class="w-5 h-5 mr-3 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        <span class="truncate">Kelola Data</span>
-                    </div>
-                </nav>
+                <span id="progress-label" class="font-semibold text-indigo-600 text-lg">0%</span>
             </div>
-            
-            <!-- Bagian Bawah Sidebar (Pengaturan Data) -->
-            <div class="p-6 border-t border-gray-200 dark:border-gray-700"> <!-- MOD: Hapus flex-shrink-0 dari sini -->
-
-                <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Unduh Riwayat</h4>
-                <div class="space-y-3 mb-4">
-                    <div>
-                        <label for="download-start-date" class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Tanggal Mulai</label>
-                        <input type="date" id="download-start-date" class="w-full p-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600">
-                    </div>
-                    <div>
-                        <label for="download-end-date" class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Tanggal Akhir</label>
-                        <input type="date" id="download-end-date" class="w-full p-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600">
-                    </div>
-                    <button id="download-csv-btn" class="w-full px-3 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 transition duration-150">
-                        Unduh (CSV)
-                    </button>
-                </div>
-
-                <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Panduan</h4>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Tekan lama pada baris kebiasaan untuk masuk ke mode hapus massal.
-                </p>
-                <button id="clear-all-data-btn" class="w-full px-3 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 transition duration-150">
-                    Hapus Semua Data
-                </button>
-            </div>
-        </div>
-
-        <!-- Konten Utama (Akan di-blur saat sidebar terbuka) -->
-        <main id="main-content" class="w-full">
-            <!-- MOD: 
-                - 'h-screen' & 'flex flex-col': Membuat kontainer ini setinggi layar dan menjadi kontainer flex vertikal.
-                - 'p-4' dihapus: Padding akan diterapkan ke anak-anaknya secara individual.
-            -->
-            <div class="w-full max-w-lg mx-auto h-screen flex flex-col">
-
-                <!-- Header Utama -->
-                <!-- MOD: 
-                    - 'flex-shrink-0': Mencegah header ini menyusut.
-                    - 'px-4': Menambahkan padding horizontal yang sebelumnya ada di 'div' induk.
-                -->
-                <header class="flex-shrink-0 flex justify-between items-center pt-2 pb-4 px-4">
-                    <!-- Header Mode Normal -->
-                    <div id="header-normal" class="flex justify-between items-center w-full">
-                        <button id="sidebar-open-btn" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-full transition duration-150" title="Buka Menu">
-                            <!-- SVG Ikon Menu -->
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                        </button>
-                        <div class="text-2xl font-bold">
-                            Kebiasaanku
-                        </div>
-                        <div class="flex space-x-2">
-                            <button id="theme-toggle-btn" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-full transition duration-150" title="Ganti Tema">
-                                <!-- Ikon Tema akan diisi oleh JS -->
-                            </button>
-                            <button id="add-habit-btn" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-full transition duration-150" title="Tambah Kebiasaan">
-                                <!-- SVG Ikon Plus -->
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Header Mode Seleksi (hidden by default) -->
-                    <div id="header-select" class="hidden justify-between items-center w-full">
-                        <div class="flex items-center space-x-4">
-                            <button id="cancel-select-btn" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-full transition duration-150" title="Batalkan Seleksi">
-                                <!-- SVG Ikon X -->
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
-                            <div id="select-count" class="text-xl font-bold">
-                                0 Terpilih
-                            </div>
-                        </div>
-                        <button id="multi-delete-btn" class_="px-3 py-1.5 text-white rounded-lg transition duration-150 flex items-center btn-danger" title="Hapus Kebiasaan Terpilih" disabled>
-                            <!-- SVG Ikon Trash -->
-                            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            Hapus (0)
-                        </button>
-                    </div>
-                </header>
-
-                <!-- Area Konten (Loading atau Tabel) -->
-                <!-- MOD: 
-                    - 'flex-grow': Membuat area ini mengisi sisa ruang.
-                    - 'overflow-y-auto': Membuat HANYA area ini yang bisa di-scroll secara vertikal.
-                    - 'px-4': Menambahkan padding horizontal yang sebelumnya ada di 'div' induk.
-                -->
-                <!-- REVISI: Menambahkan 'overflow-x-auto' di sini -->
-                <div id="content-area" class="flex-grow overflow-y-auto overflow-x-auto px-4">
-                    
-                    <!-- FITUR 14: Pesan Loading Kustom -->
-                    <div id="loading-spinner" class="flex flex-col items-center justify-center min-h-[50vh] text-gray-900 dark:text-white">
-                        <!-- SVG Spinner -->
-                        <svg class="w-8 h-8 animate-spin text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                        </svg>
-                        <div class="text-center mt-4">
-                            <p class="text-lg">Memuat data... Harap bersabar.</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Sembari menunggu, mari manfaatkan waktu ini untuk berdzikir.</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Tabel Kebiasaan (hidden by default) -->
-                    <!-- REVISI: Menghapus 'overflow-x-auto' dari sini. Ini adalah penyebab error. -->
-                    <div id="table-container" class="hidden">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-                            <!-- MOD: 'sticky top-0 z-10': Membuat header tabel menempel di bagian atas 'content-area' saat di-scroll -->
-                            <thead id="habit-table-head" class="sticky top-0 z-10">
-                                <!-- Header hari akan diisi oleh JS -->
-                            </thead>
-                            <tbody id="habit-table-body" class="divide-y divide-gray-200 dark:divide-gray-800">
-                                <!-- Baris kebiasaan akan diisi oleh JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <!-- Status Kosong (hidden by default) -->
-                    <div id="empty-state" class="hidden py-8 text-center text-gray-400 dark:text-gray-500">
-                        Belum ada kebiasaan. Tekan 
-                        <span class="inline-block align-bottom">
-                            <!-- SVG Ikon Plus (Kecil) -->
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                        </span>
-                         untuk menambah!
-                    </div>
-                </div>
-
-                <!-- FITUR 2: Footer dengan Lencana Profesional -->
-                <!-- MOD: 
-                    - 'flex-shrink-0': Mencegah footer ini menyusut.
-                    - 'mt-8' dihapus: Spasi sekarang diatur oleh 'flex-grow' pada 'content-area'.
-                -->
-                <footer class="flex-shrink-0 text-xs text-gray-500 dark:text-gray-600 p-4 border-t border-gray-200 dark:border-gray-800 text-center">
-                    <p>Data Anda disimpan secara lokal di peramban ini.</p>
-                    <a 
-                        href="https://www.threads.net/@ikmalogic" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        class="inline-flex items-center gap-1.5 mt-2 px-3 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-                    >
-                        <!-- SVG Ikon Verified -->
-                        <svg class="w-3 h-3 text-blue-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zM13.354 8.354a.5.5 0 00-.708-.708L9 11.293 7.354 9.646a.5.5 0 10-.708.708l2 2a.5.5 0 00.708 0l4-4z" clip-rule="evenodd" /></svg>
-                        by @ikmalogic
-                    </a>
-                </footer>
-            </div>
-        </main>
-    </div>
-    
-    <!-- === MODALS === -->
-    
-    <!-- Modal: Tambah Kebiasaan -->
-    <div id="add-habit-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-        <div class="modal-content w-full max-w-sm p-6 bg-white dark:bg-gray-800 rounded-xl shadow-2xl">
-            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Tambah Kebiasaan Baru</h2>
-            <form id="add-habit-form">
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1" for="habit-name">Nama Kebiasaan</label>
-                    <!-- FITUR 18: Input dengan tombol 'X' -->
-                    <div class="relative">
-                        <input
-                            id="habit-name"
-                            type="text"
-                            class="w-full p-3 pr-10 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Contoh: Coding, Olahraga"
-                            required
-                        />
-                        <button
-                            type="button"
-                            id="clear-habit-name-btn"
-                            class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hidden"
-                            title="Hapus inputan"
-                        >
-                            <!-- SVG Ikon X -->
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Tipe</label>
-                    <div class="flex space-x-4">
-                        <label class="flex items-center text-gray-800 dark:text-white">
-                            <input
-                                type="radio"
-                                name="habit-type"
-                                value="boolean"
-                                checked
-                                class="form-radio text-blue-500 bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                            />
-                            <span class="ml-2">Selesai/Tidak (✓ / ✗)</span>
-                        </label>
-                        <label class="flex items-center text-gray-800 dark:text-white">
-                            <input
-                                type="radio"
-                                name="habit-type"
-                                value="metric"
-                                class="form-radio text-blue-500 bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                            />
-                            <span class="ml-2">Metrik (Jumlah)</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div id="metric-unit-container" class="mb-4 hidden">
-                    <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1" for="habit-unit">Unit Metrik (Contoh: menit, jam, halaman)</label>
-                    <input
-                        id="habit-unit"
-                        type="text"
-                        class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Unit"
-                    />
-                </div>
-
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Warna Penanda</label>
-                    <div id="color-palette" class="flex space-x-3">
-                        <!-- Warna akan diisi oleh JS -->
-                    </div>
-                    <input type="hidden" id="habit-color" value="red">
-                </div>
-
-                <div class="flex justify-end space-x-3">
-                    <button
-                        type="button"
-                        class="modal-cancel-btn px-4 py-2 rounded-lg btn-secondary"
-                    >
-                        Batal
-                    </button>
-                    <button
-                        type="submit"
-                        class="px-4 py-2 rounded-lg btn-primary flex items-center"
-                    >
-                        Simpan Kebiasaan
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 
-    <!-- Modal: Input Metrik -->
-    <div id="metric-input-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-        <div class="modal-content w-full max-w-sm p-6 bg-white dark:bg-gray-800 rounded-xl shadow-2xl">
-            <h2 id="metric-modal-title" class="text-xl font-bold text-gray-900 dark:text-white mb-2">Input Metrik</h2>
-            <p id="metric-modal-subtitle" class="text-sm text-gray-500 dark:text-gray-400 mb-4"></p>
-            <form id="metric-input-form">
-                <div class="mb-6">
-                    <label id="metric-modal-label" class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1" for="metric-value">Berapa banyak?</label>
-                    <input
-                        id="metric-value"
-                        type="number"
-                        class="w-full p-3 text-2xl font-semibold bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
-                        min="0"
-                        required
-                    />
-                    <p id="metric-modal-error" class="text-red-600 dark:text-red-400 text-sm mt-2 hidden"></p>
-                </div>
-                <div class="flex justify-end space-x-3">
-                    <button
-                        type="button"
-                        class="modal-cancel-btn px-4 py-2 rounded-lg btn-secondary"
-                    >
-                        Batal
-                    </button>
-                    <button
-                        type="submit"
-                        class="px-4 py-2 rounded-lg btn-primary flex items-center"
-                    >
-                        Simpan
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Modal: Konfirmasi Hapus (Umum) -->
-    <div id="delete-confirm-modal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-        <div class="modal-content w-full max-w-xs p-6 bg-white dark:bg-gray-800 rounded-xl shadow-2xl">
-            <h2 class="text-xl font-bold text-red-600 dark:text-red-400 mb-2 flex items-center">
-                <!-- SVG Ikon Trash -->
-                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                Hapus Data?
-            </h2>
-            <p id="delete-modal-text" class="text-sm text-gray-700 dark:text-gray-300 mb-6">
-                Anda yakin? Tindakan ini tidak dapat dibatalkan.
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Fasttrack Learning Class</h1>
+            <p class="mt-2 text-lg text-indigo-600 font-semibold">BCB Academy @belajarcarabelajar</p>
+            <p class="mt-4 max-w-2xl mx-auto text-base text-gray-600">
+                Program kelas online eksklusif untuk mempercepat pemahaman materi belajar dengan Gems & Canvas Google Gemini AI.
             </p>
-            <div class="flex justify-end space-x-3">
-                <button
-                    type="button"
-                    class="modal-cancel-btn px-4 py-2 rounded-lg btn-secondary"
-                >
-                    Batal
-                </button>
-                <button
-                    type="button"
-                    id="delete-confirm-btn"
-                    class="px-4 py-2 rounded-lg btn-danger flex items-center"
-                >
-                    Ya, Hapus
-                </button>
-            </div>
+        </header>
+
+        <!-- Main Course Structure -->
+        <div class="space-y-16">
+
+            <!-- CHAPTER 1: INTRODUCTION -->
+            <section id="chapter1">
+                <h2 class="text-2xl font-bold border-b-2 border-indigo-500 pb-2 mb-8">CHAPTER 1: INTRODUCTION</h2>
+                <div class="space-y-10">
+                    <!-- Modul 1 -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3">MODUL 1: 👩‍🏫 Welcome to Fastrack Learning Class</h3>
+                        <div class="video-container shadow-lg">
+                            <iframe src="https://www.loom.com/embed/bdda41f996a34ef783e56865e0165350?sid=78411f2c-8955-448f-b227-3e8b7817ed3c" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+                        </div>
+                    </div>
+                    <!-- Modul 2 -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3">MODUL 2: ⚙️ Setting Up Gemini AI Account for Students</h3>
+                        <div class="video-container shadow-lg">
+                            <iframe src="https://www.loom.com/embed/8c75e4eae6384be780a1e1234e98ee43?sid=e77d45d8-6293-4a04-b2d9-571839cf5619" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+                        </div>
+                    </div>
+                    <!-- Modul 3 -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3">MODUL 3: 💎 Gems Gemini AI Feature</h3>
+                        <div class="video-container shadow-lg">
+                            <iframe src="https://www.loom.com/embed/6884fb37f5cb42b7a130e0b8577cc6f7?sid=7c063b5b-daf6-481c-b779-85c725e2453d" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CHAPTER 2: ADVANCED APPLICATIONS -->
+            <section id="chapter2">
+                <h2 class="text-2xl font-bold border-b-2 border-indigo-500 pb-2 mb-8">CHAPTER 2: ADVANCED APPLICATIONS</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+                        <ul class="space-y-3 list-inside text-gray-700">
+                            <li class="font-medium">MODUL 1: 📅 SMART Study Calendar</li>
+                            <li class="font-medium">MODUL 2: 🧩 Analogy & Metaphore</li>
+                            <li class="font-medium">MODUL 3: 🧠 Mnemonic Memory Maker</li>
+                            <li class="font-medium">MODUL 4: 💯 Quiz Generator</li>
+                            <li class="font-medium">MODUL 5: 📝 Complex MCQ Assessment</li>
+                            <li class="font-medium">MODUL 6: 🃏 Creating Flashcards</li>
+                            <li class="font-medium">MODUL 7: 👨‍🏫 Feynman Technique</li>
+                            <li class="font-medium">MODUL 8: 📚 Book Review A</li>
+                            <li class="font-medium">MODUL 9: 📺 YouTube Highlights</li>
+                            <li class="font-medium">MODUL 10: 📝 Try Out</li>
+                        </ul>
+                        <ul class="space-y-3 list-inside text-gray-700">
+                            <li class="font-medium">MODUL 11: 🌐 Tutorial Maker</li>
+                            <li class="font-medium">MODUL 12: 📘 Fiction Book Summary</li>
+                            <li class="font-medium">MODUL 13: 📕 Resume Buku Non-Fiksi</li>
+                            <li class="font-medium">MODUL 14: 📖 Ebook Reader</li>
+                            <li class="font-medium">MODUL 15: 👨‍💻 CodeMaster AI</li>
+                            <li class="font-medium">MODUL 16: 📝 Try Out TKA</li>
+                            <li class="font-medium">MODUL 17: 📱 Micro-learning Mobile</li>
+                            <li class="font-medium">MODUL 18: 📝 Transcript Summary</li>
+                            <li class="font-medium">MODUL 19: 📝 Google Keep</li>
+                            <li class="font-medium">MODUL 20: 📅 Google Calendar</li>
+                        </ul>
+                    </div>
+                    <div class="mt-8">
+                        <h3 class="text-lg font-semibold mb-3 text-center">SEMUA SUMBER DAYA CHAPTER 2:</h3>
+                        <div class="doc-container shadow-lg border border-gray-200">
+                            <iframe src="https://docs.google.com/document/d/e/2PACX-1vQLQvBHe5IcvkdpvhX7ZMfTzc6AMmDp9Ag_yPoeskYHS0PET7am8-b7sEJqVIa2OtJzxxgeL0GDuQt9/pub?embedded=true"></iframe>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CHAPTER 3: IMPLEMENTATION -->
+            <section id="chapter3">
+                <h2 class="text-2xl font-bold border-b-2 border-indigo-500 pb-2 mb-8">CHAPTER 3: IMPLEMENTATION</h2>
+                <div class="space-y-10">
+                    <!-- Modul 1 -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3">MODUL 1: ✅ Checklist Notes</h3>
+                        <div id="checklist" class="bg-white p-6 rounded-lg shadow-md space-y-4">
+                            <p class="text-gray-600">Tandai setiap item yang telah Anda praktikkan untuk melacak kemajuan Anda.</p>
+                            <!-- Checklist items will be generated here by JS -->
+                        </div>
+                    </div>
+                     <!-- Modul 2 -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3">MODUL 2: 🎯 Conclusion</h3>
+                        <div class="video-container shadow-lg">
+                           <iframe src="https://www.loom.com/embed/baf465172bd64a2d840371e8e39e67e9?sid=f7f1131f-0f09-4912-8ac3-c87aec1a8a28" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+                        </div>
+                    </div>
+                    <!-- Modul 3 -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3">MODUL 3: 📚 Sources & Reference</h3>
+                        <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                            <p class="mb-4">Akses semua sumber daya tambahan, template, dan referensi melalui tautan di bawah ini.</p>
+                            <a href="https://drive.google.com/drive/folders/1OISyvm64O5VtFmmteWzJL3PyqflZ6qQf?usp=sharing" target="_blank" rel="noopener noreferrer" class="inline-block bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors duration-300">
+                                Buka Folder Sumber Daya
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
+        
+        <!-- Footer -->
+        <footer class="text-center mt-16 pt-8 border-t border-gray-200">
+            <p class="text-sm text-gray-500">&copy; 2025 BCB Academy @belajarcarabelajar. All Rights Reserved.</p>
+        </footer>
+
     </div>
 
+    <script>
+        // --- SCRIPT FOR PROGRESS BAR AND CHECKLIST ---
 
-    <!-- === JAVASCRIPT APLIKASI === -->
-    <script type="module">
-        // --- KONSTANTA & STATE ---
-        const LONG_PRESS_DURATION = 3000;
-        const PAST_DAYS = getPastDays(4);
-        const COLOR_MAP = {
-            red: 'bg-red-500',
-            orange: 'bg-orange-500',
-            yellow: 'bg-yellow-500',
-            green: 'bg-green-500',
-            blue: 'bg-blue-500',
-            indigo: 'bg-indigo-500',
-            violet: 'bg-violet-500',
-            pink: 'bg-pink-500',
-        };
-        const SVG_ICON = {
-            sun: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`,
-            moon: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>`,
-            check: `<svg class="w-5 h-5 text-green-400" stroke-width="3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>`,
-            x: `<svg class="w-5 h-5 text-red-500" stroke-width="3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>`,
-            checkSquare: `<svg class="w-5 h-5 text-blue-500 dark:text-blue-400" fill="currentColor" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg>`,
-            square: `<svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/></svg>`,
-            trash: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>`
-        };
+        document.addEventListener('DOMContentLoaded', function() {
+            const checklistContainer = document.getElementById('checklist');
+            const progressBar = document.getElementById('progress-bar');
+            const progressLabel = document.getElementById('progress-label');
 
-        // State Global
-        let habits = [];
-        let currentTheme = 'dark';
-        let isSelectionMode = false;
-        let selectedHabitIds = new Set();
-        let pressTimer = null;
-        let deleteCallback = null; // Fungsi yg akan dijalankan oleh modal konfirmasi
+            // List of tasks for the checklist
+            const tasks = [
+                '⚙️ Setting Up Gemini AI Account for Students',
+                '💎 Gems Gemini AI Feature',
+                '📅 SMART Study Calendar',
+                '🧩 Analogy & Metaphore',
+                '🧠 Mnemonic Memory Maker',
+                '💯 Quiz Generator',
+                '📝 Complex MCQ Assessment',
+                '🃏 Creating Flashcards',
+                '👨‍🏫 Feynman Technique',
+                '📚 Book Review A',
+                '📺 YouTube Highlights',
+                '📝 Try Out',
+                '🌐 Tutorial Maker',
+                '📘 Fiction Book Summary',
+                '📕 Resume Buku Non-Fiksi',
+                '📖 Ebook Reader',
+                '👨‍💻 CodeMaster AI',
+                '📝 Try Out TKA',
+                '📱 Micro-learning Mobile',
+                '📝 Transcript Summary',
+                '📝 Google Keep',
+                '📅 Google Calendar'
+            ];
 
-        // --- DOM Elements ---
-        const $ = (selector) => document.querySelector(selector);
-        const $$ = (selector) => document.querySelectorAll(selector);
-
-        // Kontainer Utama
-        const loadingSpinner = $('#loading-spinner');
-        const tableContainer = $('#table-container');
-        const tableHead = $('#habit-table-head');
-        const tableBody = $('#habit-table-body');
-        const emptyState = $('#empty-state');
-        
-        // Header
-        const headerNormal = $('#header-normal');
-        const headerSelect = $('#header-select');
-        const cancelSelectBtn = $('#cancel-select-btn');
-        const selectCount = $('#select-count');
-        const multiDeleteBtn = $('#multi-delete-btn');
-        
-        // Sidebar
-        const sidebarMenu = $('#sidebar-menu');
-        const sidebarOverlay = $('#sidebar-overlay');
-        const sidebarOpenBtn = $('#sidebar-open-btn');
-        const sidebarCloseBtn = $('#sidebar-close-btn');
-        const sidebarNavTrack = $('#sidebar-nav-track');
-        const sidebarNavAdd = $('#sidebar-nav-add');
-        const sidebarNavTheme = $('#sidebar-nav-theme');
-        const sidebarThemeIcon = $('#sidebar-theme-icon');
-        const sidebarNavManage = $('#sidebar-nav-manage');
-        const clearAllDataBtn = $('#clear-all-data-btn');
-
-        // Sidebar Download
-        const downloadStartDateInput = $('#download-start-date');
-        const downloadEndDateInput = $('#download-end-date');
-        const downloadCsvBtn = $('#download-csv-btn');
-
-        // Tombol Tema
-        const themeToggleBtn = $('#theme-toggle-btn');
-        
-        // Modal Tambah
-        const addHabitBtn = $('#add-habit-btn');
-        const addHabitModal = $('#add-habit-modal');
-        const addHabitForm = $('#add-habit-form');
-        const habitNameInput = $('#habit-name');
-        const clearHabitNameBtn = $('#clear-habit-name-btn');
-        const habitTypeRadios = $$('input[name="habit-type"]');
-        const metricUnitContainer = $('#metric-unit-container');
-        const habitUnitInput = $('#habit-unit');
-        const colorPaletteContainer = $('#color-palette');
-        const habitColorInput = $('#habit-color');
-        
-        // Modal Metrik
-        const metricInputModal = $('#metric-input-modal');
-        const metricInputForm = $('#metric-input-form');
-        const metricModalTitle = $('#metric-modal-title');
-        const metricModalSubtitle = $('#metric-modal-subtitle');
-        const metricModalLabel = $('#metric-modal-label');
-        const metricValueInput = $('#metric-value');
-        const metricModalError = $('#metric-modal-error');
-        
-        // Modal Hapus
-        const deleteConfirmModal = $('#delete-confirm-modal');
-        const deleteModalText = $('#delete-modal-text');
-        const deleteConfirmBtn = $('#delete-confirm-btn');
-
-        // --- Fungsi Utilitas ---
-
-        /** Mendapatkan 4 hari terakhir (termasuk hari ini) */
-        function getPastDays(numDays = 4) {
-            const days = [];
-            for (let i = numDays - 1; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                days.push({
-                    dateKey: formatDate(date, 'key'), // YYYY-MM-DD
-                    display: formatDate(date, 'display'), // SEN 01
-                    isToday: i === 0,
-                });
-            }
-            return days;
-        }
-
-        /** Format tanggal (YYYY-MM-DD atau SEN 01) */
-        function formatDate(date, format) {
-            const day = date.getDate().toString().padStart(2, '0');
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const year = date.getFullYear().toString();
-            const daysOfWeek = ['MIN', 'SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB'];
-            const dayName = daysOfWeek[date.getDay()];
-            return format === 'display' ? `${dayName} ${day}` : `${year}-${month}-${day}`;
-        }
-        
-        /** Menampilkan atau menyembunyikan modal */
-        function toggleModal(modal, open) {
-            if (open) {
-                modal.classList.add('open');
-            } else {
-                modal.classList.remove('open');
-            }
-        }
-
-        // --- Fungsi Penyimpanan Lokal (Fitur 12) ---
-        
-        function loadHabits() {
-            try {
-                const savedHabits = localStorage.getItem('habits');
-                habits = savedHabits ? JSON.parse(savedHabits) : [];
-                // Urutkan saat memuat
-                habits.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-            } catch (error) {
-                console.error("Gagal memuat habits dari localStorage:", error);
-                habits = [];
-            }
-        }
-
-        function saveHabits() {
-            try {
-                localStorage.setItem('habits', JSON.stringify(habits));
-            } catch (error) {
-                console.error("Gagal menyimpan habits ke localStorage:", error);
-            }
-        }
-
-        // --- Fungsi Tema (Fitur 1, 10) ---
-
-        function loadTheme() {
-            currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-            applyTheme();
-        }
-
-        function applyTheme() {
-            if (currentTheme === 'light') {
-                document.documentElement.classList.remove('dark');
-                themeToggleBtn.innerHTML = SVG_ICON.moon;
-                sidebarThemeIcon.innerHTML = SVG_ICON.moon;
-            } else {
-                document.documentElement.classList.add('dark');
-                themeToggleBtn.innerHTML = SVG_ICON.sun;
-                sidebarThemeIcon.innerHTML = SVG_ICON.sun;
-            }
-        }
-
-        function toggleTheme() {
-            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            localStorage.setItem('theme', currentTheme);
-            applyTheme();
-        }
-
-        // --- Fungsi Render Tampilan ---
-
-        /** Merender seluruh tabel (header dan body) */
-        function renderUI() {
-            renderTableHeaders();
-            renderTableBody();
-            updateHeaderUI();
-            
-            // Tampilkan empty state jika perlu
-            if (habits.length === 0) {
-                emptyState.classList.remove('hidden');
-                tableContainer.classList.add('hidden');
-            } else {
-                emptyState.classList.add('hidden');
-                tableContainer.classList.remove('hidden');
-            }
-        }
-        
-        /** Merender 4 kolom header hari */
-        function renderTableHeaders() {
-            /* MOD: Menambahkan 'bg-gray-100 dark:bg-black' ke 'tr' 
-                    agar konten yang di-scroll tidak terlihat tembus di belakang header tabel. */
-            let headerHTML = `<tr class="bg-gray-100 dark:bg-black text-gray-500 dark:text-gray-400 uppercase text-xs font-semibold tracking-wider">
-                <th class="w-2/5 px-2 py-4 text-left"></th>`; // Kolom Nama Kebiasaan
-            
-            PAST_DAYS.forEach(day => {
-                headerHTML += `
-                    <th class="w-1/12 px-2 py-4 text-center relative">
-                        ${day.display.split(' ')[0]}
-                        <br />
-                        <span class="text-lg ${day.isToday ? 'text-gray-800 dark:text-white' : ''}">${day.display.split(' ')[1]}</span>
-                        ${day.isToday ? `<div class="absolute top-1 right-1/2 translate-x-1/2 w-1.5 h-1.5 bg-gray-800 dark:bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>` : ''}
-                    </th>`;
-            });
-            headerHTML += `</tr>`;
-            tableHead.innerHTML = headerHTML;
-        }
-
-        /** Merender semua baris kebiasaan */
-        function renderTableBody() {
-            tableBody.innerHTML = ''; // Kosongkan body
-            
-            habits.forEach(habit => {
-                const tr = document.createElement('tr');
-                const isSelected = selectedHabitIds.has(habit.id);
+            // Generate checklist items dynamically
+            tasks.forEach((task, index) => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center p-3 bg-gray-50 rounded-md border border-gray-200 hover:bg-indigo-50 cursor-pointer transition-colors';
                 
-                tr.className = `text-gray-900 dark:text-white transition duration-150 ${isSelected ? 'bg-blue-100 dark:bg-blue-900/40' : 'hover:bg-gray-100 dark:hover:bg-gray-800/50'} ${isSelectionMode ? 'cursor-pointer' : 'cursor-default'}`;
-                tr.dataset.habitId = habit.id;
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `task-${index}`;
+                checkbox.className = 'h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 custom-checkbox';
+                
+                const span = document.createElement('span');
+                span.className = 'ml-3 text-gray-700 font-medium';
+                span.textContent = task;
 
-                // --- Kolom Nama Kebiasaan ---
-                let nameCellHTML = `
-                    <td class="px-2 py-3 text-left font-medium flex items-center justify-between group">
-                        <div class="flex items-center min-w-0">
-                `;
-                
-                if (isSelectionMode) {
-                    nameCellHTML += `
-                        <div class="mr-3 p-1 select-checkbox" data-habit-id="${habit.id}" title="${isSelected ? 'Batalkan Pilih' : 'Pilih'}">
-                            ${isSelected ? SVG_ICON.checkSquare : SVG_ICON.square}
-                        </div>`;
-                } else {
-                    nameCellHTML += `<div class="w-2 h-2 rounded-full mr-3 ${COLOR_MAP[habit.color] || 'bg-gray-500'}"></div>`;
-                }
-                
-                nameCellHTML += `<span class="truncate">${habit.name}</span></div>`;
-                
-                if (!isSelectionMode) {
-                    nameCellHTML += `
-                        <button class="delete-habit-btn text-gray-400 dark:text-gray-700 hover:text-red-500 transition-colors p-1 rounded-full opacity-0 group-hover:opacity-100" data-habit-id="${habit.id}" title="Hapus ${habit.name}">
-                            ${SVG_ICON.trash}
-                        </button>`;
-                }
-                
-                nameCellHTML += `</td>`;
-                tr.innerHTML = nameCellHTML;
+                label.appendChild(checkbox);
+                label.appendChild(span);
+                checklistContainer.appendChild(label);
 
-                // --- Kolom Progress Harian ---
-                PAST_DAYS.forEach(day => {
-                    tr.appendChild(renderProgressCell(habit, day.dateKey, day.isToday));
-                });
-                
-                // --- Tambahkan Event Listeners ke Baris ---
-                
-                // 1. Klik (Mode Seleksi)
-                tr.addEventListener('click', () => {
-                    clearTimeout(pressTimer); // Batalkan long-press jika ini klik biasa
-                    if (isSelectionMode) {
-                        handleToggleSelection(habit.id);
-                    }
-                });
-                
-                // 2. Long Press (Mouse)
-                tr.addEventListener('mousedown', (e) => {
-                    // Hanya trigger long-press dengan klik kiri
-                    if (e.button !== 0) return;
-                    clearTimeout(pressTimer); // Hapus timer sebelumnya
-                    pressTimer = setTimeout(() => handleEnterSelectionMode(habit.id), LONG_PRESS_DURATION);
-                });
-                tr.addEventListener('mouseup', () => clearTimeout(pressTimer));
-                tr.addEventListener('mouseleave', () => clearTimeout(pressTimer));
-                
-                // 3. Long Press (Touch)
-                tr.addEventListener('touchstart', () => {
-                    clearTimeout(pressTimer); // Hapus timer sebelumnya
-                    pressTimer = setTimeout(() => handleEnterSelectionMode(habit.id), LONG_PRESS_DURATION);
-                });
-                tr.addEventListener('touchend', () => clearTimeout(pressTimer));
-                tr.addEventListener('touchcancel', () => clearTimeout(pressTimer));
-
-                tableBody.appendChild(tr);
+                // Add event listener to each checkbox
+                checkbox.addEventListener('change', updateProgress);
             });
 
-            // Tambahkan listener untuk tombol hapus (setelah di-render)
-            $$('.delete-habit-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Hentikan event klik pada baris
-                    const habitId = e.currentTarget.dataset.habitId;
-                    openDeleteModal(habitId);
-                });
-            });
+            const checkboxes = checklistContainer.querySelectorAll('input[type="checkbox"]');
+            const totalTasks = checkboxes.length;
 
-            // Tambahkan listener untuk checkbox (setelah di-render)
-            $$('.select-checkbox').forEach(box => {
-                box.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Hentikan event klik pada baris
-                    handleToggleSelection(e.currentTarget.dataset.habitId);
-                });
-            });
-        }
-        
-        /** Merender satu sel progres */
-        function renderProgressCell(habit, dateKey, isToday) {
-            const td = document.createElement('td');
-            td.className = 'px-2';
-
-            const value = habit.progress[dateKey];
-            let cellHTML = '';
-            let cellClass = `text-center transition duration-100 p-2 text-sm font-semibold h-16 flex items-center justify-center ${isSelectionMode ? 'cursor-default' : 'cursor-pointer'}`;
-            
-            if (habit.type === 'boolean') {
-                const isCompleted = !!value; // undefined atau false jadi false
-                if (isCompleted) {
-                    cellHTML = SVG_ICON.check;
-                    cellClass += ' text-green-400';
-                } else if (value === false) { // Secara eksplisit ditandai 'tidak'
-                    cellHTML = SVG_ICON.x;
-                    cellClass += ' text-red-500';
-                } else { // undefined (kosong)
-                    cellHTML = `<div class="w-3 h-3 rounded-full border-2 ${isToday ? 'border-gray-400 dark:border-gray-500' : 'border-gray-300 dark:border-gray-700'} hover:border-gray-800 dark:hover:border-white"></div>`;
-                    cellClass += ' text-gray-500';
-                }
-            } else { // Tipe 'metric'
-                const isCompleted = value > 0;
-                const isSkipped = value === 0; // 0 eksplisit
-                if (isCompleted) {
-                    cellHTML = `
-                        <div class="flex flex-col items-center">
-                            <span class="text-gray-900 dark:text-white text-base leading-tight">${value}</span>
-                            <span class="text-gray-500 dark:text-gray-400 text-xs leading-tight">${habit.unit || ''}</span>
-                        </div>`;
-                    cellClass += ' text-white';
-                } else if (isSkipped && value !== undefined) { // 0
-                    cellHTML = SVG_ICON.x;
-                    cellClass += ' text-red-500';
-                } else { // undefined (kosong)
-                    cellHTML = `<div class="w-3 h-3 rounded-full border-2 ${isToday ? 'border-gray-400 dark:border-gray-500' : 'border-gray-300 dark:border-gray-700'} hover:border-gray-800 dark:hover:border-white"></div>`;
-                    cellClass += ' text-gray-500';
-                }
-            }
-            
-            td.innerHTML = `<div class="${cellClass}">${cellHTML}</div>`;
-            
-            // Tambah listener klik HANYA jika tidak dalam mode seleksi
-            if (!isSelectionMode) {
-                td.firstElementChild.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (habit.type === 'boolean') {
-                        handleToggleBoolean(habit.id, dateKey);
+            // Function to update the progress bar
+            function updateProgress() {
+                let checkedCount = 0;
+                checkboxes.forEach(cb => {
+                    if (cb.checked) {
+                        checkedCount++;
+                        // Add a line-through style to the parent label's text
+                        cb.parentElement.classList.add('line-through', 'text-gray-400');
                     } else {
-                        openMetricModal(habit.id, dateKey);
+                         // Remove the style if unchecked
+                        cb.parentElement.classList.remove('line-through', 'text-gray-400');
                     }
                 });
-            }
-            return td;
-        }
-        
-        /** Memperbarui header (Normal vs Seleksi) */
-        function updateHeaderUI() {
-            if (isSelectionMode) {
-                headerNormal.classList.add('hidden');
-                headerSelect.classList.remove('hidden');
-                headerSelect.classList.add('flex');
+
+                const percentage = totalTasks > 0 ? Math.round((checkedCount / totalTasks) * 100) : 0;
                 
-                const count = selectedHabitIds.size;
-                selectCount.textContent = `${count} Terpilih`;
-                multiDeleteBtn.textContent = `Hapus (${count})`;
-                multiDeleteBtn.disabled = count === 0;
-            } else {
-                headerNormal.classList.remove('hidden');
-                headerNormal.classList.add('flex');
-                headerSelect.classList.add('hidden');
-                headerSelect.classList.remove('flex');
-            }
-        }
-        
-        /** Merender palet warna di modal */
-        function renderColorPalette() {
-            colorPaletteContainer.innerHTML = '';
-            Object.keys(COLOR_MAP).forEach(color => {
-                const isSelected = habitColorInput.value === color;
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.dataset.color = color;
-                button.className = `w-8 h-8 rounded-full ${COLOR_MAP[color]} ${isSelected ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-800 ring-blue-500' : ''}`;
+                // Update the progress bar width
+                progressBar.style.width = percentage + '%';
                 
-                button.addEventListener('click', () => {
-                    habitColorInput.value = color;
-                    // Update UI palet
-                    $$('#color-palette button').forEach(btn => {
-                        btn.classList.remove('ring-2', 'ring-offset-2', 'ring-offset-white', 'dark:ring-offset-gray-800', 'ring-blue-500');
-                    });
-                    button.classList.add('ring-2', 'ring-offset-2', 'ring-offset-white', 'dark:ring-offset-gray-800', 'ring-blue-500');
-                });
-                colorPaletteContainer.appendChild(button);
-            });
-        }
-        
-        // --- Fungsi Logika Inti (CRUD) ---
-
-        /** Menambah kebiasaan baru */
-        function handleAddHabit(e) {
-            e.preventDefault();
-            const type = new FormData(e.target).get('habit-type');
-            const newHabit = {
-                id: Date.now().toString(),
-                name: habitNameInput.value.trim(),
-                type: type,
-                unit: type === 'metric' ? habitUnitInput.value.trim() : '',
-                color: habitColorInput.value,
-                progress: {},
-                createdAt: new Date().toISOString(),
-            };
-            
-            habits.push(newHabit);
-            // Urutkan lagi
-            habits.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-            
-            saveHabits();
-            renderUI();
-            toggleModal(addHabitModal, false);
-        }
-        
-        /** Update 3-state boolean: undefined -> true -> false -> true */
-        function handleToggleBoolean(habitId, dateKey) {
-            const habit = habits.find(h => h.id === habitId);
-            if (!habit) return;
-            
-            const currentValue = habit.progress[dateKey];
-            let newValue;
-            if (currentValue === undefined) {
-                newValue = true; // (Kosong -> Selesai)
-            } else if (currentValue === true) {
-                newValue = false; // (Selesai -> Tidak)
-            } else { // currentValue === false
-                newValue = true; // (Tidak -> Selesai)
-                // Jika ingin siklus 3-state (Kosong -> Selesai -> Tidak -> Kosong)
-                // newValue = undefined; 
+                // Update the progress label text
+                progressLabel.textContent = percentage + '%';
             }
             
-            habit.progress[dateKey] = newValue;
-            saveHabits();
-            renderUI();
-        }
-        
-        /** Update nilai metrik */
-        function handleUpdateMetric(e) {
-            e.preventDefault();
-            const habitId = e.target.dataset.habitId;
-            const dateKey = e.target.dataset.dateKey;
-            const habit = habits.find(h => h.id === habitId);
-            if (!habit) return;
-
-            const numericValue = parseFloat(metricValueInput.value);
-            
-            if (isNaN(numericValue) || numericValue < 0) {
-                metricModalError.textContent = "Masukkan nilai angka yang valid (tidak boleh negatif).";
-                metricModalError.classList.remove('hidden');
-                return;
-            }
-            
-            metricModalError.classList.add('hidden');
-            habit.progress[dateKey] = numericValue;
-            saveHabits();
-            renderUI();
-            toggleModal(metricInputModal, false);
-        }
-        
-        /** Menghapus satu kebiasaan */
-        function handleDeleteHabit(habitId) {
-            habits = habits.filter(h => h.id !== habitId);
-            saveHabits();
-            renderUI();
-        }
-
-        /** Menghapus semua data */
-        function handleClearAllData() {
-            habits = [];
-            selectedHabitIds.clear();
-            isSelectionMode = false;
-            saveHabits();
-            renderUI();
-        }
-        
-        /** Menghapus kebiasaan yang dipilih */
-        function handleMultiDelete() {
-            habits = habits.filter(h => !selectedHabitIds.has(h.id));
-            saveHabits();
-            // Keluar dari mode seleksi
-            handleExitSelectionMode();
-        }
-
-        // --- Fungsi Modal & Interaksi UI ---
-
-        /** Membuka modal tambah */
-        function openAddHabitModal() {
-            addHabitForm.reset();
-            habitNameInput.value = ''; // Pastikan input 'X'
-            clearHabitNameBtn.classList.add('hidden');
-            metricUnitContainer.classList.add('hidden');
-            habitColorInput.value = 'red';
-            renderColorPalette();
-            toggleModal(addHabitModal, true);
-        }
-        
-        /** Membuka modal metrik */
-        function openMetricModal(habitId, dateKey) {
-            const habit = habits.find(h => h.id === habitId);
-            if (!habit) return;
-            
-            metricInputForm.dataset.habitId = habitId;
-            metricInputForm.dataset.dateKey = dateKey;
-            
-            metricModalTitle.textContent = `Input Metrik: ${habit.name}`;
-            metricModalSubtitle.textContent = `untuk ${PAST_DAYS.find(d => d.dateKey === dateKey).display}`;
-            metricModalLabel.textContent = `Berapa banyak ${habit.unit || ''}?`;
-            metricValueInput.value = habit.progress[dateKey] || 0;
-            metricModalError.classList.add('hidden');
-            
-            toggleModal(metricInputModal, true);
-        }
-        
-        /** Membuka modal konfirmasi hapus */
-        function openDeleteModal(habitId) {
-            const habit = habits.find(h => h.id === habitId);
-            if (!habit) return;
-            
-            deleteModalText.innerHTML = `Anda yakin ingin menghapus kebiasaan <strong>${habit.name}</strong>? Progres yang tersimpan akan hilang.`;
-            deleteCallback = () => handleDeleteHabit(habitId);
-            toggleModal(deleteConfirmModal, true);
-        }
-        
-        /** Membuka modal konfirmasi hapus massal */
-        function openMultiDeleteModal() {
-            if (selectedHabitIds.size === 0) return;
-            
-            deleteModalText.innerHTML = `Anda yakin ingin menghapus <strong>${selectedHabitIds.size} kebiasaan</strong> yang dipilih?`;
-            deleteCallback = handleMultiDelete;
-            toggleModal(deleteConfirmModal, true);
-        }
-
-        /** Membuka modal konfirmasi hapus semua */
-        function openClearAllDataModal() {
-            deleteModalText.innerHTML = `Anda yakin ingin menghapus <strong>SEMUA</strong> data kebiasaan? Tindakan ini tidak dapat dibatalkan.`;
-            deleteCallback = handleClearAllData;
-            toggleModal(deleteConfirmModal, true);
-        }
-
-        /** Meng-quote string untuk CSV (Penting agar koma tidak merusak tabel) */
-        function quoteCSV(str) {
-            const string = String(str);
-            // Jika string mengandung koma, petik ganda, atau baris baru, bungkus dengan petik ganda
-            // dan escape petik ganda di dalamnya dengan petik ganda tambahan
-            if (string.includes(',') || string.includes('"') || string.includes('\n')) {
-                return `"${string.replace(/"/g, '""')}"`;
-            }
-            return string;
-        }
-
-        /** Mengunduh data sebagai CSV */
-        function handleDownloadCSV() {
-            const startDate = new Date(downloadStartDateInput.value);
-            const endDate = new Date(downloadEndDateInput.value);
-
-            if (!downloadStartDateInput.value || !downloadEndDateInput.value) {
-                alert("Silakan pilih tanggal mulai dan tanggal akhir."); // Menggunakan alert untuk kesederhanaan
-                return;
-            }
-
-            // Validasi sederhana
-            if (endDate < startDate) {
-                alert("Tanggal akhir tidak boleh sebelum tanggal mulai.");
-                return;
-            }
-
-            // 1. Buat daftar rentang tanggal
-            const dates = [];
-            let currentDate = new Date(startDate);
-            // Set ke awal hari untuk menghindari masalah zona waktu
-            currentDate.setHours(0, 0, 0, 0); 
-            endDate.setHours(23, 59, 59, 999); // Set ke akhir hari
-
-            while (currentDate <= endDate) {
-                dates.push(formatDate(currentDate, 'key')); // YYYY-MM-DD
-                currentDate.setDate(currentDate.getDate() + 1);
-            }
-
-            if (dates.length === 0) {
-                alert("Rentang tanggal tidak valid.");
-                return;
-            }
-
-            // 2. Buat Konten CSV
-            const csvRows = [];
-            
-            // Header
-            const header = ["Kebiasaan", "Tipe", "Unit", ...dates];
-            csvRows.push(header.join(','));
-
-            // Rows (Data)
-            habits.forEach(habit => {
-                const row = [
-                    quoteCSV(habit.name),
-                    quoteCSV(habit.type),
-                    quoteCSV(habit.unit || '')
-                ];
-                
-                dates.forEach(dateKey => {
-                    const progress = habit.progress[dateKey];
-                    let value = ''; // Default (kosong)
-                    if (progress === true) {
-                        value = 'Selesai';
-                    } else if (progress === false) {
-                        value = 'Tidak';
-                    } else if (progress !== undefined) {
-                        value = progress; // Nilai metrik (angka)
-                    }
-                    row.push(quoteCSV(value));
-                });
-                
-                csvRows.push(row.join(','));
-            });
-
-            const csvContent = csvRows.join('\n');
-            
-            // 3. Buat Blob dan Trigger Download
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            
-            link.setAttribute('href', url);
-            // Buat nama file yang dinamis
-            const fileName = `habit_export_${formatDate(startDate, 'key')}_sd_${formatDate(endDate, 'key')}.csv`;
-            link.setAttribute('download', fileName);
-            link.style.visibility = 'hidden';
-            
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        // --- Fungsi Mode Seleksi ---
-
-        /** Masuk ke mode seleksi */
-        function handleEnterSelectionMode(habitId) {
-            if (isSelectionMode) return; // Sudah dalam mode seleksi
-            isSelectionMode = true;
-            selectedHabitIds.clear();
-            selectedHabitIds.add(habitId);
-            renderUI(); // Render ulang untuk menampilkan checkbox
-        }
-        
-        /** Keluar dari mode seleksi */
-        function handleExitSelectionMode() {
-            isSelectionMode = false;
-            selectedHabitIds.clear();
-            renderUI();
-        }
-        
-        /** Memilih/membatalkan pilihan satu baris */
-        function handleToggleSelection(habitId) {
-            if (selectedHabitIds.has(habitId)) {
-                selectedHabitIds.delete(habitId);
-            } else {
-                selectedHabitIds.add(habitId);
-            }
-            
-            // Jika tidak ada yg dipilih, keluar mode seleksi
-            if (selectedHabitIds.size === 0) {
-                handleExitSelectionMode();
-            } else {
-                renderUI(); // Render ulang untuk update checkbox dan header
-            }
-        }
-
-        // --- Inisialisasi & Event Listeners ---
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            // 1. Setup Tema
-            loadTheme();
-            themeToggleBtn.addEventListener('click', toggleTheme);
-            sidebarNavTheme.addEventListener('click', toggleTheme);
-            
-            // 2. Setup Sidebar
-            sidebarOpenBtn.addEventListener('click', () => document.body.classList.add('sidebar-open'));
-            sidebarCloseBtn.addEventListener('click', () => document.body.classList.remove('sidebar-open'));
-            sidebarOverlay.addEventListener('click', () => document.body.classList.remove('sidebar-open'));
-            sidebarNavTrack.addEventListener('click', () => document.body.classList.remove('sidebar-open'));
-            sidebarNavManage.addEventListener('click', () => {
-                handleEnterSelectionMode(null); // Masuk mode seleksi tanpa memilih apa pun
-                document.body.classList.remove('sidebar-open');
-            });
-            clearAllDataBtn.addEventListener('click', openClearAllDataModal);
-
-            // Setup Download
-            const today = new Date();
-            const lastWeek = new Date();
-            lastWeek.setDate(today.getDate() - 6);
-            
-            // Set default date range (7 hari terakhir)
-            downloadStartDateInput.valueAsDate = lastWeek;
-            downloadEndDateInput.valueAsDate = today;
-            downloadCsvBtn.addEventListener('click', handleDownloadCSV);
-
-            // 3. Setup Modal
-            addHabitBtn.addEventListener('click', openAddHabitModal);
-            sidebarNavAdd.addEventListener('click', () => {
-                document.body.classList.remove('sidebar-open');
-                openAddHabitModal();
-            });
-            
-            // Listener untuk tombol 'X' di input nama habit (Fitur 18)
-            habitNameInput.addEventListener('input', (e) => {
-                clearHabitNameBtn.classList.toggle('hidden', e.target.value.length === 0);
-            });
-            clearHabitNameBtn.addEventListener('click', () => {
-                habitNameInput.value = '';
-                clearHabitNameBtn.classList.add('hidden');
-                habitNameInput.focus();
-            });
-
-            // Listener untuk radio button tipe habit
-            habitTypeRadios.forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    metricUnitContainer.classList.toggle('hidden', e.target.value !== 'metric');
-                    if (e.target.value === 'metric') {
-                        habitUnitInput.required = true;
-                    } else {
-                        habitUnitInput.required = false;
-                    }
-                });
-            });
-
-            // Tombol batal universal untuk semua modal
-            $$('.modal-cancel-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    toggleModal(e.target.closest('.modal'), false);
-                });
-            });
-            
-            // Klik di luar modal-content untuk menutup
-            $$('.modal').forEach(modal => {
-                modal.addEventListener('click', (e) => {
-                    // Cek jika yg diklik adalah modal-background (bukan modal-content)
-                    if (e.target === modal) {
-                        toggleModal(modal, false);
-                    }
-                });
-            });
-
-            // Form Submissions
-            addHabitForm.addEventListener('submit', handleAddHabit);
-            metricInputForm.addEventListener('submit', handleUpdateMetric);
-            deleteConfirmBtn.addEventListener('click', () => {
-                if (deleteCallback) {
-                    deleteCallback();
-                }
-                toggleModal(deleteConfirmModal, false);
-                deleteCallback = null;
-            });
-            
-            // 4. Setup Header Mode Seleksi
-            cancelSelectBtn.addEventListener('click', handleExitSelectionMode);
-            multiDeleteBtn.addEventListener('click', openMultiDeleteModal);
-
-            // 5. Muat Data dan Render Awal
-            renderColorPalette(); // Render palet sekali di awal
-            
-            // Tampilkan loading sebentar
-            setTimeout(() => {
-                loadHabits();
-                renderUI();
-                loadingSpinner.classList.add('hidden');
-            }, 500); // Tampilkan loading (termasuk pesan dzikir)
+            // Initial call to set the progress if there are any pre-checked boxes (e.g., from browser cache)
+            updateProgress();
         });
-        
     </script>
 
 </body>
 </html>
-
-
-
-
-
-
-
-
 
 
 
