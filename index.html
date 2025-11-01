@@ -45,7 +45,6 @@
         #sidebar-menu {
             transition: transform 0.3s ease-in-out;
             transform: translateX(-100%);
-            /* PERMINTAAN 1: Buat sidebar bisa di-scroll jika kontennya panjang */
             overflow-y: auto;
         }
         #sidebar-overlay {
@@ -132,7 +131,6 @@
         <div id="sidebar-overlay" class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"></div>
 
         <!-- Sidebar Menu -->
-        <!-- class 'flex-col' dan 'h-full' sudah ada, penambahan overflow-y di <style> akan bekerja -->
         <div id="sidebar-menu" class="fixed top-0 left-0 h-full w-72 bg-white dark:bg-gray-800 z-50 shadow-2xl flex flex-col">
             <!-- Bagian Atas Sidebar -->
             <div class="p-6 flex-grow">
@@ -188,7 +186,7 @@
 
                 <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Panduan</h4>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Tekan lama pada baris kebiasaan untuk masuk ke mode hapus massal.
+                    Gunakan tombol 'Kelola Data' di atas untuk menghapus banyak kebiasaan.
                 </p>
                 <button id="clear-all-data-btn" class="w-full px-3 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 transition duration-150">
                     Hapus Semua Data
@@ -458,7 +456,7 @@
     <!-- === JAVASCRIPT APLIKASI === -->
     <script type="module">
         // --- KONSTANTA & STATE ---
-        const LONG_PRESS_DURATION = 500;
+        // const LONG_PRESS_DURATION = 500; // Dihapus
         const PAST_DAYS = getPastDays(4);
         const COLOR_MAP = {
             red: 'bg-red-500',
@@ -485,7 +483,7 @@
         let currentTheme = 'dark';
         let isSelectionMode = false;
         let selectedHabitIds = new Set();
-        let pressTimer = null;
+        // let pressTimer = null; // Dihapus
         let deleteCallback = null; // Fungsi yg akan dijalankan oleh modal konfirmasi
 
         // --- DOM Elements ---
@@ -656,12 +654,13 @@
         /** Merender 4 kolom header hari */
         function renderTableHeaders() {
             let headerHTML = `<tr class="text-gray-500 dark:text-gray-400 uppercase text-xs font-semibold tracking-wider">
-                <!-- PERMINTAAN 2: Kolom 'sticky' dengan background yang sama dengan body -->
-                <th class="sticky left-0 w-2/5 px-2 py-4 text-left bg-gray-100 dark:bg-black z-10"></th>`; // Kolom Nama Kebiasaan
+                <!-- REVISI: Tambah top-0 dan z-20 (pojok) -->
+                <th class="sticky top-0 left-0 w-2/5 px-2 py-4 text-left bg-gray-100 dark:bg-black z-20"></th>`; // Kolom Nama Kebiasaan
             
             PAST_DAYS.forEach(day => {
+                // REVISI: Tambah sticky top-0, background, dan z-10
                 headerHTML += `
-                    <th class="w-1/12 px-2 py-4 text-center relative">
+                    <th class="sticky top-0 w-1/12 px-2 py-4 text-center relative bg-gray-100 dark:bg-black z-10">
                         ${day.display.split(' ')[0]}
                         <br />
                         <span class="text-lg ${day.isToday ? 'text-gray-800 dark:text-white' : ''}">${day.display.split(' ')[1]}</span>
@@ -684,9 +683,10 @@
                 tr.dataset.habitId = habit.id;
 
                 // --- Kolom Nama Kebiasaan ---
-                // PERMINTAAN 2: Kolom 'sticky' dengan background yang sama dengan body
+                // REVISI: Tambah z-10
                 let nameCellHTML = `
-                    <td class="sticky left-0 px-2 py-3 text-left font-medium flex items-center justify-between group bg-gray-100 dark:bg-black">
+                    <td class="sticky left-0 px-2 py-3 text-left font-medium flex items-center justify-between group bg-gray-100 dark:bg-black z-10">
+                        <!-- UPDATE: Ditambahkan flex-1 dan min-w-0 untuk memastikan text wrap bekerja -->
                         <div class="flex flex-1 items-center min-w-0">
                 `;
                 
@@ -699,7 +699,7 @@
                     nameCellHTML += `<div class="w-2 h-2 rounded-full mr-3 ${COLOR_MAP[habit.color] || 'bg-gray-500'}"></div>`;
                 }
                 
-                // PERMINTAAN 4: Hapus 'truncate', ganti dengan 'break-words' agar teks wrap
+                // PERMINTAAN 4: 'break-words' agar teks wrap
                 nameCellHTML += `<span class="break-words">${habit.name}</span></div>`;
                 
                 if (!isSelectionMode) {
@@ -721,29 +721,14 @@
                 
                 // 1. Klik (Mode Seleksi)
                 tr.addEventListener('click', () => {
-                    clearTimeout(pressTimer); // Batalkan long-press jika ini klik biasa
+                    // clearTimeout(pressTimer); // Dihapus
                     if (isSelectionMode) {
                         handleToggleSelection(habit.id);
                     }
                 });
                 
-                // 2. Long Press (Mouse)
-                tr.addEventListener('mousedown', (e) => {
-                    // Hanya trigger long-press dengan klik kiri
-                    if (e.button !== 0) return;
-                    clearTimeout(pressTimer); // Hapus timer sebelumnya
-                    pressTimer = setTimeout(() => handleEnterSelectionMode(habit.id), LONG_PRESS_DURATION);
-                });
-                tr.addEventListener('mouseup', () => clearTimeout(pressTimer));
-                tr.addEventListener('mouseleave', () => clearTimeout(pressTimer));
-                
-                // 3. Long Press (Touch)
-                tr.addEventListener('touchstart', () => {
-                    clearTimeout(pressTimer); // Hapus timer sebelumnya
-                    pressTimer = setTimeout(() => handleEnterSelectionMode(habit.id), LONG_PRESS_DURATION);
-                });
-                tr.addEventListener('touchend', () => clearTimeout(pressTimer));
-                tr.addEventListener('touchcancel', () => clearTimeout(pressTimer));
+                // 2. & 3. Long Press Dihapus
+                // ...
 
                 tableBody.appendChild(tr);
             });
@@ -1110,7 +1095,7 @@
 
         /** Masuk ke mode seleksi */
         function handleEnterSelectionMode(habitId) {
-            if (isSelectionMode) return; // Sudah dalam mode seleksi
+            // if (isSelectionMode) return; // Dihapus
             isSelectionMode = true;
             selectedHabitIds.clear();
             if (habitId) { // Ditambahkan cek null, untuk 'Kelola Data'
